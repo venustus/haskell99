@@ -37,11 +37,13 @@ isPalindrome xs = (head xs) == (last xs) && (isPalindrome $ init $ tail xs)
 
 data NestedList a = Elem a | List [NestedList a] deriving (Show)
 
+-- flattens a nested list and returns a haskell list of all containing elements
 flatten :: NestedList a -> [a]
 flatten (Elem a) = [a]
 flatten (List (x : xs)) = flatten x ++ flatten (List xs)
 flatten (List []) = []
 
+-- compresses a list of elements such that consecutive elements are singled out
 compress :: (Eq a) => [a] -> [a]
 compress [x] = [x]
 compress [] = []
@@ -49,7 +51,7 @@ compress (x : y : xs)
     | x == y    = compress (x : xs)
     | otherwise = x : compress (y : xs)
 
-
+-- packs equal consecutive elements into sublists and returns a list of lists
 pack :: (Eq a) => [a] -> [[a]]
 pack [] = []
 pack [x] = [[x]]
@@ -58,16 +60,18 @@ pack (x : y : xs)
     | otherwise = let xsp = pack (y : xs) in
                   (x : head xsp) : tail xsp
 
+-- packs equal consecutive elements into tuples of length and element
 encode :: (Eq a) => [a] -> [(Int, a)]
 encode = map (\ls -> (length ls, head ls)) . pack
 
 data PackedListElem a = Single a | Multiple Int a deriving (Show)
 
+-- same as encode, but if an element has no duplicates, it is simply copied to the result list
 encodeModified :: (Eq a) => [a] -> [PackedListElem a]
 encodeModified xs = let encodedList = encode xs in
                      map (\(i, elem) -> if i == 1 then (Single elem) else (Multiple i elem)) encodedList
 
-
+-- opposite of encodeModified
 decodeModified :: (Eq a) => [PackedListElem a] -> [a]
 decodeModified []                  = []
 decodeModified ((Single x) : xs)     = x : decodeModified xs
@@ -75,6 +79,7 @@ decodeModified ((Multiple i x) : xs)
     | i == 1    = x : (decodeModified xs)
     | otherwise = x : (decodeModified ((Multiple (i - 1) x) : xs))
 
+-- same as encode, but implemented directly
 encodeDirect :: (Eq a) => [a] -> [PackedListElem a]
 encodeDirect []       = []
 encodeDirect [x]      = [(Single x)]
