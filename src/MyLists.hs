@@ -181,3 +181,9 @@ lsort = sortOn length
 lfsort :: [[a]] -> [[a]]
 lfsort ls =  let freqMap = Map.fromListWith (+) (map (\x -> ((length x), 1)) ls) in
              sortOn (\l -> (freqMap Map.! (length l))) ls
+
+
+factlist = 1 : (zipWith (*) [1..] factlist)
+factl n = factlist !! n
+
+fibs = 1:1:zipWith (+) fibs (tail fibs)
