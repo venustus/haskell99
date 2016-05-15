@@ -118,3 +118,42 @@ constructCompleteBinaryTree' n i x
 
 constructCompleteBinaryTree :: Int -> a -> Tree a
 constructCompleteBinaryTree n = constructCompleteBinaryTree' n 1
+
+data Fullness = Full Int | JustComplete Int | None
+
+isCompleteBinaryTree' :: Tree a -> Fullness
+isCompleteBinaryTree' Empty                  = None
+isCompleteBinaryTree' (Branch x Empty Empty) = Full 1
+isCompleteBinaryTree' (Branch x left right)  = case (leftFullness, rightFullness) of
+    (Full nl, Full nr)         -> if abs(nl - nr) <= 1 then Full ((max nl nr) + 1) else None
+    (Full nl, JustComplete nr) -> if nl == nr then JustComplete (nl + 1) else None
+    _                          -> None
+    where leftFullness  = isCompleteBinaryTree' left
+          rightFullness = isCompleteBinaryTree' right
+
+
+isCompleteBinaryTree :: Tree a -> Bool
+isCompleteBinaryTree t = case isCompleteBinaryTree' t of
+    Full _         -> True
+    JustComplete _ -> True
+    _              -> False
+
+type Pos = (Int, Int)
+
+layout :: Tree a -> Tree (a, Pos)
+layout t = layoutForSubtree 1 1 t
+    where
+        rightMost :: Tree a -> Tree a
+        rightMost Empty = Empty
+        rightMost r@(Branch _ _ Empty)  = r
+        rightMost (Branch c left right) = rightMost right
+        layoutForSubtree :: Int -> Int -> Tree a -> Tree (a, Pos)
+        layoutForSubtree _ _ Empty                  = Empty
+        layoutForSubtree y x (Branch c Empty Empty) = Branch (c, (x, y)) Empty Empty
+        layoutForSubtree y x (Branch c left right)  =
+            let leftSubtree = layoutForSubtree (y + 1) x left
+                newX        = case leftSubtree of Empty -> x - 1
+                                                  _     -> let Branch (_, (latestX, _)) _ _ = rightMost leftSubtree in latestX
+                rightSubtree = layoutForSubtree (y + 1) (newX + 2) right in
+            Branch (c, ((newX + 1), y)) leftSubtree rightSubtree
+
