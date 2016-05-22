@@ -143,11 +143,9 @@ type Pos = (Int, Int)
 layout :: Tree a -> Tree (a, Pos)
 layout t = layoutForSubtree 1 1 t
     where
-        rightMost :: Tree a -> Tree a
         rightMost Empty = Empty
         rightMost r@(Branch _ _ Empty)  = r
         rightMost (Branch c left right) = rightMost right
-        layoutForSubtree :: Int -> Int -> Tree a -> Tree (a, Pos)
         layoutForSubtree _ _ Empty                  = Empty
         layoutForSubtree y x (Branch c Empty Empty) = Branch (c, (x, y)) Empty Empty
         layoutForSubtree y x (Branch c left right)  =
@@ -156,4 +154,27 @@ layout t = layoutForSubtree 1 1 t
                                                   _     -> let Branch (_, (latestX, _)) _ _ = rightMost leftSubtree in latestX
                 rightSubtree = layoutForSubtree (y + 1) (newX + 2) right in
             Branch (c, ((newX + 1), y)) leftSubtree rightSubtree
+
+height :: Tree a -> Int
+height Empty                 = 0
+height (Branch c left right) = (max (height left) (height right)) + 1
+
+
+layout' :: Tree a -> Tree (a, Pos)
+layout' t = layoutForSubtree 1 1 t
+    where
+        treeHeight = height t
+        getRightX currentHeight currentX = currentX + (quot (2 ^ (treeHeight - currentHeight)) 2)
+        getLeftX currentHeight currentX = currentX - (quot (2 ^ (treeHeight - currentHeight)) 2)
+        layoutForSubtree _ _ Empty                  = Empty
+        layoutForSubtree h i (Branch c left right)
+            | i == 1    = let leftSubtree  = layoutForSubtree (h + 1) i left
+                              currentX     = case leftSubtree of Empty -> i
+                                                                 Branch (_, (leftX, _)) _ _ -> getRightX h leftX
+                              rightSubtree = layoutForSubtree (h + 1) (getRightX h currentX) right in
+                          Branch (c, (currentX, h)) leftSubtree rightSubtree
+            | otherwise = let leftSubtree  = layoutForSubtree (h + 1) (getLeftX h i) left
+                              currentX     = i
+                              rightSubtree = layoutForSubtree (h + 1) (getRightX h currentX) right in
+                          Branch (c, (currentX, h)) leftSubtree rightSubtree
 
