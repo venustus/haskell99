@@ -1,5 +1,8 @@
 module BinaryTrees where
 
+import Data.List.Split (splitOn)
+import Debug.Trace (trace)
+
 data Tree a = Empty | Branch a (Tree a) (Tree a)
               deriving (Show, Eq)
 
@@ -178,3 +181,54 @@ layout' t = layoutForSubtree 1 1 t
                               rightSubtree = layoutForSubtree (h + 1) (getRightX h currentX) right in
                           Branch (c, (currentX, h)) leftSubtree rightSubtree
 
+stringToTreeHelper :: [Char] -> (Tree Char, [Char])
+--stringToTreeHelper s | trace ("stringToTreeHelper " ++ s) False = undefined
+stringToTreeHelper a@(x : xs) | x == ',' || x == ')'  = (Empty, a)
+stringToTreeHelper (x : y : xs)
+    | y == ',' || y == ')' = (Branch x Empty Empty, y : xs)
+    | y == '('             = let (leftSubTree, ',' : rightSubTreeStr)   = stringToTreeHelper xs
+                                 (rightSubTree, ')' : restOfTheTreeStr) = stringToTreeHelper rightSubTreeStr in
+                             (Branch x leftSubTree rightSubTree, restOfTheTreeStr)
+
+stringToTree :: [Char] -> Tree Char
+stringToTree ""  = Empty
+stringToTree [x] = Branch x Empty Empty
+stringToTree l   = fst $ stringToTreeHelper l
+
+
+treeToString :: Tree Char -> [Char]
+treeToString Empty                  = ""
+treeToString (Branch c Empty Empty) = c : []
+treeToString (Branch c left right)  = (c : '(' : (treeToString left)) ++ (',' : (treeToString right)) ++ ")"
+
+
+preorder :: Tree Char -> [Char]
+preorder Empty                 = ""
+preorder (Branch c left right) = (c : (preorder left)) ++ (preorder right)
+
+inorder :: Tree Char -> [Char]
+inorder Empty                 = ""
+inorder (Branch c left right) = (inorder left) ++ [c] ++ (inorder right)
+
+preInTree :: [Char] -> [Char] -> Tree Char
+-- preInTree a b | trace ("preInTree " ++ show a ++ " " ++ show b) False = undefined
+preInTree [] []                     = Empty
+preInTree (root1 : []) (root2 : []) = Branch root1 Empty Empty
+preInTree (root : po) io            = let [leftio, rightio] = splitOn [root] io
+                                          leftSubTreeSize   = length leftio in
+    Branch root (preInTree (take leftSubTreeSize po) leftio) (preInTree (drop leftSubTreeSize po) rightio)
+
+
+tree2ds :: Tree Char -> [Char]
+tree2ds Empty                 = "."
+tree2ds (Branch c left right) = [c] ++ (tree2ds left) ++ (tree2ds right)
+
+ds2treeHelper :: [Char] -> (Tree Char, [Char])
+ds2treeHelper (r : rest)
+    | r == '.'  = (Empty, rest)
+    | otherwise = let (leftSubTree, rightSubTreeStr) = ds2treeHelper rest
+                      (rightSubTree, otherStr) = ds2treeHelper rightSubTreeStr in
+                      (Branch r leftSubTree rightSubTree, otherStr)
+
+ds2tree :: [Char] -> Tree Char
+ds2tree dsrep = fst (ds2treeHelper dsrep)
